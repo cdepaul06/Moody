@@ -52,5 +52,5 @@ export function useActivities() {
     ...customActivities,
   ];
 
-  return { activities, customActivities, addActivity, deleteActivity, loading };
+  return { activities, customActivities, addActivity, deleteActivity, loading, refresh: fetchCustom };
 }
