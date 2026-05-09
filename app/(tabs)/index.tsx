@@ -28,8 +28,22 @@ export default function LogMoodScreen() {
   const colors = useColors();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const { activities: allActivities, refresh, addActivity, deleteActivity } = useActivities();
-  useFocusEffect(useCallback(() => { refresh(); }, [refresh]));
+  useFocusEffect(useCallback(() => {
+    refresh();
+    return () => {
+      setMood(3);
+      setEnergy(5);
+      setActivities([]);
+      setNotes('');
+      setAddingActivity(false);
+      setNewEmoji('');
+      setNewLabel('');
+      setDeleteModalVisible(false);
+      setDeleteSelections(new Set());
+    };
+  }, [refresh]));
   const scrollRef = useRef<ScrollView>(null);
+  const notesYRef = useRef(0);
 
   const [mood, setMood] = useState<number>(3);
   const [energy, setEnergy] = useState<number>(5);
@@ -195,7 +209,7 @@ export default function LogMoodScreen() {
           <ActivityTags selected={activities} onChange={setActivities} activities={allActivities} />
         </View>
 
-        <View style={styles.section}>
+        <View style={styles.section} onLayout={(e) => { notesYRef.current = e.nativeEvent.layout.y; }}>
           <Text style={styles.sectionLabel}>Notes</Text>
           <TextInput
             style={styles.notes}
@@ -206,7 +220,10 @@ export default function LogMoodScreen() {
             multiline
             numberOfLines={4}
             textAlignVertical="top"
-            onFocus={() => setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100)}
+            onFocus={() => {
+              scrollRef.current?.scrollTo({ y: Math.max(0, notesYRef.current - 50), animated: false });
+              setTimeout(() => scrollRef.current?.scrollTo({ y: notesYRef.current, animated: true }), 300);
+            }}
           />
         </View>
 

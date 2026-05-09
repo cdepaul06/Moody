@@ -12,6 +12,7 @@ import { useAuth } from '@/context/auth';
 import { supabase } from '@/lib/supabase';
 import { MoodEntry } from '@/types';
 import { useColors, ColorScheme } from '@/hooks/useColors';
+import { useActivities } from '@/hooks/useActivities';
 import MoodEntryCard from '@/components/MoodEntryCard';
 
 export default function HistoryScreen() {
@@ -19,6 +20,7 @@ export default function HistoryScreen() {
   const colors = useColors();
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
+  const { activities } = useActivities();
   const [entries, setEntries] = useState<MoodEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -57,7 +59,7 @@ export default function HistoryScreen() {
       contentContainerStyle={entries.length === 0 ? styles.emptyContainer : styles.listContent}
       data={entries}
       keyExtractor={(item) => item.id}
-      renderItem={({ item }) => <MoodEntryCard entry={item} />}
+      renderItem={({ item }) => <MoodEntryCard entry={item} activities={activities} />}
       refreshControl={
         <RefreshControl
           refreshing={refreshing}

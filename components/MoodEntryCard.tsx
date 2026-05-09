@@ -1,10 +1,12 @@
 import { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { ACTIVITIES, MOOD_CONFIG, MoodEntry } from '@/types';
+import { Activity } from '@/hooks/useActivities';
 import { useColors, ColorScheme } from '@/hooks/useColors';
 
 type Props = {
   entry: MoodEntry;
+  activities?: Activity[];
 };
 
 function formatDate(iso: string): string {
@@ -26,13 +28,14 @@ function energyLabel(value: number): string {
   return 'Energized';
 }
 
-export default function MoodEntryCard({ entry }: Props) {
+export default function MoodEntryCard({ entry, activities }: Props) {
   const colors = useColors();
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
+  const allActivities = activities ?? ACTIVITIES.map((a) => ({ ...a, custom: false }));
   const moodConfig = MOOD_CONFIG[entry.mood];
   const activityLabels = entry.activities
-    .map((id) => ACTIVITIES.find((a) => a.id === id))
+    .map((id) => allActivities.find((a) => a.id === id))
     .filter(Boolean)
     .map((a) => `${a!.emoji} ${a!.label}`);
 
