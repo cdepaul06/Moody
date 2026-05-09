@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -48,13 +48,22 @@ export default function SettingsScreen() {
   ];
 
   const user = session?.user;
-  const initialName: string = user?.user_metadata?.display_name ?? '';
+  const resolvedName: string =
+    user?.user_metadata?.display_name ??
+    user?.user_metadata?.full_name ??
+    user?.user_metadata?.name ??
+    '';
   const email = user?.email ?? '';
 
   const [editingName, setEditingName] = useState(false);
-  const [displayName, setDisplayName] = useState(initialName);
-  const [nameInput, setNameInput] = useState(initialName);
+  const [displayName, setDisplayName] = useState(resolvedName);
+  const [nameInput, setNameInput] = useState(resolvedName);
   const [savingName, setSavingName] = useState(false);
+
+  useEffect(() => {
+    setDisplayName(resolvedName);
+    setNameInput(resolvedName);
+  }, [resolvedName]);
 
   const avatarLetter = (displayName || email).charAt(0).toUpperCase();
 
