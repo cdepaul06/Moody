@@ -1,21 +1,23 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
-  View,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
   ActivityIndicator,
   Alert,
-  ScrollView,
 } from 'react-native';
 import { Link } from 'expo-router';
 import { supabase } from '@/lib/supabase';
-import { COLORS } from '@/types';
+import { useColors, ColorScheme } from '@/hooks/useColors';
 
 export default function SignUp() {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -34,12 +36,8 @@ export default function SignUp() {
       Alert.alert('Weak password', 'Password must be at least 6 characters.');
       return;
     }
-
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email: email.trim(),
-      password,
-    });
+    const { error } = await supabase.auth.signUp({ email: email.trim(), password });
     if (error) {
       Alert.alert('Sign up failed', error.message);
     } else {
@@ -64,7 +62,7 @@ export default function SignUp() {
         <TextInput
           style={styles.input}
           placeholder="Email"
-          placeholderTextColor={COLORS.subtext}
+          placeholderTextColor={colors.subtext}
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
@@ -74,7 +72,7 @@ export default function SignUp() {
         <TextInput
           style={styles.input}
           placeholder="Password"
-          placeholderTextColor={COLORS.subtext}
+          placeholderTextColor={colors.subtext}
           value={password}
           onChangeText={setPassword}
           secureTextEntry
@@ -82,7 +80,7 @@ export default function SignUp() {
         <TextInput
           style={styles.input}
           placeholder="Confirm Password"
-          placeholderTextColor={COLORS.subtext}
+          placeholderTextColor={colors.subtext}
           value={confirm}
           onChangeText={setConfirm}
           secureTextEntry
@@ -106,46 +104,38 @@ export default function SignUp() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  inner: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 32,
-    paddingVertical: 48,
-    gap: 12,
-  },
-  emoji: { fontSize: 64, textAlign: 'center', marginBottom: 8 },
-  title: {
-    fontSize: 34,
-    fontWeight: '700',
-    color: COLORS.primary,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 15,
-    color: COLORS.subtext,
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  input: {
-    backgroundColor: COLORS.card,
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    color: COLORS.text,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  button: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  linkButton: { alignItems: 'center', paddingVertical: 12 },
-  linkText: { color: COLORS.primary, fontSize: 14, fontWeight: '500' },
-});
+function makeStyles(c: ColorScheme) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.background },
+    inner: {
+      flexGrow: 1,
+      justifyContent: 'center',
+      paddingHorizontal: 32,
+      paddingVertical: 48,
+      gap: 12,
+    },
+    emoji: { fontSize: 64, textAlign: 'center', marginBottom: 8 },
+    title: { fontSize: 34, fontWeight: '700', color: c.primary, textAlign: 'center' },
+    subtitle: { fontSize: 15, color: c.subtext, textAlign: 'center', marginBottom: 24 },
+    input: {
+      backgroundColor: c.card,
+      borderRadius: 14,
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      fontSize: 16,
+      color: c.text,
+      borderWidth: 1,
+      borderColor: c.border,
+    },
+    button: {
+      backgroundColor: c.primary,
+      borderRadius: 14,
+      paddingVertical: 16,
+      alignItems: 'center',
+      marginTop: 8,
+    },
+    buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+    linkButton: { alignItems: 'center', paddingVertical: 12 },
+    linkText: { color: c.primary, fontSize: 14, fontWeight: '500' },
+  });
+}

@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -10,11 +10,15 @@ import {
 import { useFocusEffect } from 'expo-router';
 import { useAuth } from '@/context/auth';
 import { supabase } from '@/lib/supabase';
-import { COLORS, MoodEntry } from '@/types';
+import { MoodEntry } from '@/types';
+import { useColors, ColorScheme } from '@/hooks/useColors';
 import MoodEntryCard from '@/components/MoodEntryCard';
 
 export default function HistoryScreen() {
   const { session } = useAuth();
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+
   const [entries, setEntries] = useState<MoodEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -27,7 +31,6 @@ export default function HistoryScreen() {
       .eq('user_id', session.user.id)
       .order('created_at', { ascending: false })
       .limit(100);
-
     if (!error && data) setEntries(data as MoodEntry[]);
     setLoading(false);
     setRefreshing(false);
@@ -40,15 +43,10 @@ export default function HistoryScreen() {
     }, [session])
   );
 
-  const handleRefresh = () => {
-    setRefreshing(true);
-    fetchEntries();
-  };
-
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -63,8 +61,8 @@ export default function HistoryScreen() {
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
-          onRefresh={handleRefresh}
-          tintColor={COLORS.primary}
+          onRefresh={() => { setRefreshing(true); fetchEntries(); }}
+          tintColor={colors.primary}
         />
       }
       ListEmptyComponent={
@@ -81,20 +79,16 @@ export default function HistoryScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
-  listContent: { padding: 16, paddingBottom: 40 },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.background },
-  emptyContainer: { flex: 1 },
-  empty: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 40,
-    paddingTop: 80,
-  },
-  emptyEmoji: { fontSize: 56, marginBottom: 16 },
-  emptyTitle: { fontSize: 20, fontWeight: '600', color: COLORS.text, marginBottom: 8 },
-  emptySubtitle: { fontSize: 15, color: COLORS.subtext, textAlign: 'center', lineHeight: 22 },
-  emptyHighlight: { color: COLORS.primary, fontWeight: '600' },
-});
+function makeStyles(c: ColorScheme) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.background },
+    listContent: { padding: 16, paddingBottom: 40 },
+    centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: c.background },
+    emptyContainer: { flex: 1 },
+    empty: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 40, paddingTop: 80 },
+    emptyEmoji: { fontSize: 56, marginBottom: 16 },
+    emptyTitle: { fontSize: 20, fontWeight: '600', color: c.text, marginBottom: 8 },
+    emptySubtitle: { fontSize: 15, color: c.subtext, textAlign: 'center', lineHeight: 22 },
+    emptyHighlight: { color: c.primary, fontWeight: '600' },
+  });
+}

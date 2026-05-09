@@ -1,26 +1,30 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Tabs } from 'expo-router';
-import { COLORS } from '@/types';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useColors } from '@/hooks/useColors';
 
 function TabIcon(props: { name: React.ComponentProps<typeof FontAwesome>['name']; color: string }) {
   return <FontAwesome size={24} {...props} />;
 }
 
 export default function TabLayout() {
+  const insets = useSafeAreaInsets();
+  const colors = useColors();
+
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: COLORS.primary,
-        tabBarInactiveTintColor: COLORS.subtext,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.subtext,
         tabBarStyle: {
-          backgroundColor: COLORS.card,
-          borderTopColor: COLORS.border,
-          paddingBottom: 4,
-          height: 60,
+          backgroundColor: colors.card,
+          borderTopColor: colors.border,
+          paddingBottom: insets.bottom || 4,
+          height: 60 + insets.bottom,
         },
         tabBarLabelStyle: { fontSize: 11, fontWeight: '500' },
-        headerStyle: { backgroundColor: COLORS.background },
-        headerTitleStyle: { color: COLORS.text, fontWeight: '600', fontSize: 18 },
+        headerStyle: { backgroundColor: colors.background },
+        headerTitleStyle: { color: colors.text, fontWeight: '600', fontSize: 18 },
         headerShadowVisible: false,
       }}
     >
@@ -46,6 +50,14 @@ export default function TabLayout() {
           title: 'Trends',
           tabBarIcon: ({ color }) => <TabIcon name="bar-chart" color={color} />,
           headerTitle: 'Your Trends',
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: 'Settings',
+          tabBarIcon: ({ color }) => <TabIcon name="cog" color={color} />,
+          headerTitle: 'Settings',
         }}
       />
     </Tabs>

@@ -3,7 +3,7 @@
     "name": "Moody",
     "slug": "Moody",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "moody",
     "userInterfaceStyle": "automatic",
@@ -31,10 +31,12 @@
     },
     "plugins": [
       "expo-router",
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-font",
+      "expo-web-browser"
     ],
     "experiments": {
-      "typedRoutes": true
+      "typedRoutes": false
     }
   }
 }

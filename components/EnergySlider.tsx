@@ -1,6 +1,7 @@
+import { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Slider from '@react-native-community/slider';
-import { COLORS } from '@/types';
+import { useColors, ColorScheme } from '@/hooks/useColors';
 
 type Props = {
   value: number;
@@ -24,6 +25,8 @@ function energyLabel(value: number): string {
 }
 
 export default function EnergySlider({ value, onChange }: Props) {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const color = energyColor(value);
 
   return (
@@ -42,7 +45,7 @@ export default function EnergySlider({ value, onChange }: Props) {
         value={value}
         onValueChange={onChange}
         minimumTrackTintColor={color}
-        maximumTrackTintColor={COLORS.border}
+        maximumTrackTintColor={colors.border}
         thumbTintColor={color}
       />
       <View style={styles.scaleRow}>
@@ -53,26 +56,19 @@ export default function EnergySlider({ value, onChange }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  label: { fontSize: 15, fontWeight: '500', color: COLORS.text },
-  badge: {
-    borderWidth: 1,
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-  },
-  badgeText: { fontSize: 12, fontWeight: '600' },
-  slider: { width: '100%', height: 40 },
-  scaleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: -4,
-  },
-  scaleText: { fontSize: 11, color: COLORS.subtext },
-});
+function makeStyles(c: ColorScheme) {
+  return StyleSheet.create({
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 4,
+    },
+    label: { fontSize: 15, fontWeight: '500', color: c.text },
+    badge: { borderWidth: 1, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3 },
+    badgeText: { fontSize: 12, fontWeight: '600' },
+    slider: { width: '100%', height: 40 },
+    scaleRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: -4 },
+    scaleText: { fontSize: 11, color: c.subtext },
+  });
+}

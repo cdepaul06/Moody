@@ -1,5 +1,7 @@
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { ACTIVITIES, COLORS } from '@/types';
+import { ColorScheme, useColors } from "@/hooks/useColors";
+import { ACTIVITIES } from "@/types";
+import { useMemo } from "react";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 type Props = {
   selected: string[];
@@ -7,6 +9,9 @@ type Props = {
 };
 
 export default function ActivityTags({ selected, onChange }: Props) {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+
   const toggle = (id: string) => {
     if (selected.includes(id)) {
       onChange(selected.filter((a) => a !== id));
@@ -17,7 +22,7 @@ export default function ActivityTags({ selected, onChange }: Props) {
 
   return (
     <View style={styles.grid}>
-      {ACTIVITIES.map((act) => {
+      {ACTIVITIES.sort((a, b) => a.label.localeCompare(b.label)).map((act) => {
         const active = selected.includes(act.id);
         return (
           <TouchableOpacity
@@ -37,28 +42,23 @@ export default function ActivityTags({ selected, onChange }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 20,
-    backgroundColor: COLORS.background,
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
-  },
-  chipActive: {
-    backgroundColor: COLORS.primaryLight,
-    borderColor: COLORS.primary,
-  },
-  chipEmoji: { fontSize: 14 },
-  chipLabel: { fontSize: 13, color: COLORS.subtext, fontWeight: '500' },
-  chipLabelActive: { color: COLORS.primary, fontWeight: '600' },
-});
+function makeStyles(c: ColorScheme) {
+  return StyleSheet.create({
+    grid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+    chip: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      paddingHorizontal: 12,
+      paddingVertical: 7,
+      borderRadius: 20,
+      backgroundColor: c.background,
+      borderWidth: 1.5,
+      borderColor: c.border,
+    },
+    chipActive: { backgroundColor: c.primaryLight, borderColor: c.primary },
+    chipEmoji: { fontSize: 14 },
+    chipLabel: { fontSize: 13, color: c.subtext, fontWeight: "500" },
+    chipLabelActive: { color: c.primary, fontWeight: "600" },
+  });
+}

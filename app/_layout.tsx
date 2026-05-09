@@ -4,6 +4,8 @@ import { useFonts } from 'expo-font';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { AuthProvider, useAuth } from '@/context/auth';
+import { ThemeProvider } from '@/context/theme';
+import { useColors } from '@/hooks/useColors';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -11,6 +13,7 @@ function RootLayoutNav() {
   const { session, loading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+  const colors = useColors();
 
   useEffect(() => {
     if (loading) return;
@@ -28,6 +31,9 @@ function RootLayoutNav() {
     <Stack>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+      <Stack.Screen name="change-email" options={{ title: 'Change Email', headerBackTitle: 'Settings' }} />
+      <Stack.Screen name="change-password" options={{ title: 'Change Password', headerBackTitle: 'Settings' }} />
+      <Stack.Screen name="delete-account" options={{ title: 'Delete Account', headerBackTitle: 'Settings', headerTintColor: colors.danger }} />
     </Stack>
   );
 }
@@ -48,8 +54,10 @@ export default function RootLayout() {
   if (!loaded) return null;
 
   return (
-    <AuthProvider>
-      <RootLayoutNav />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <RootLayoutNav />
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

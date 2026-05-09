@@ -1,5 +1,7 @@
+import { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { ACTIVITIES, COLORS, MOOD_CONFIG, MoodEntry } from '@/types';
+import { ACTIVITIES, MOOD_CONFIG, MoodEntry } from '@/types';
+import { useColors, ColorScheme } from '@/hooks/useColors';
 
 type Props = {
   entry: MoodEntry;
@@ -25,6 +27,9 @@ function energyLabel(value: number): string {
 }
 
 export default function MoodEntryCard({ entry }: Props) {
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+
   const moodConfig = MOOD_CONFIG[entry.mood];
   const activityLabels = entry.activities
     .map((id) => ACTIVITIES.find((a) => a.id === id))
@@ -68,41 +73,34 @@ export default function MoodEntryCard({ entry }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: COLORS.card,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderLeftWidth: 4,
-    gap: 10,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  moodRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  emoji: { fontSize: 32 },
-  moodLabel: { fontSize: 15, fontWeight: '700' },
-  date: { fontSize: 12, color: COLORS.subtext, marginTop: 1 },
-  energyBadge: { alignItems: 'flex-end' },
-  energyText: { fontSize: 13, fontWeight: '600', color: COLORS.text },
-  energySubtext: { fontSize: 11, color: COLORS.subtext, marginTop: 1 },
-  tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  tag: {
-    backgroundColor: COLORS.primaryLight,
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  tagText: { fontSize: 12, color: COLORS.primary, fontWeight: '500' },
-  notes: {
-    fontSize: 14,
-    color: COLORS.subtext,
-    lineHeight: 20,
-    fontStyle: 'italic',
-  },
-});
+function makeStyles(c: ColorScheme) {
+  return StyleSheet.create({
+    card: {
+      backgroundColor: c.card,
+      borderRadius: 16,
+      padding: 16,
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: c.border,
+      borderLeftWidth: 4,
+      gap: 10,
+    },
+    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+    moodRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    emoji: { fontSize: 32 },
+    moodLabel: { fontSize: 15, fontWeight: '700' },
+    date: { fontSize: 12, color: c.subtext, marginTop: 1 },
+    energyBadge: { alignItems: 'flex-end' },
+    energyText: { fontSize: 13, fontWeight: '600', color: c.text },
+    energySubtext: { fontSize: 11, color: c.subtext, marginTop: 1 },
+    tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+    tag: {
+      backgroundColor: c.primaryLight,
+      borderRadius: 20,
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+    },
+    tagText: { fontSize: 12, color: c.primary, fontWeight: '500' },
+    notes: { fontSize: 14, color: c.subtext, lineHeight: 20, fontStyle: 'italic' },
+  });
+}
