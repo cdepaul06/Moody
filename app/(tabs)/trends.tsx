@@ -1,19 +1,18 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useAuth } from "@/context/auth";
+import { ColorScheme, useColors } from "@/hooks/useColors";
+import { supabase } from "@/lib/supabase";
+import { ACTIVITIES, MOOD_CONFIG, MoodEntry } from "@/types";
+import { useFocusEffect } from "expo-router";
+import { useCallback, useMemo, useState } from "react";
 import {
-  View,
-  Text,
+  ActivityIndicator,
   ScrollView,
   StyleSheet,
-  ActivityIndicator,
+  Text,
   useWindowDimensions,
-} from 'react-native';
-import { useFocusEffect } from 'expo-router';
-import { LineChart, BarChart } from 'react-native-gifted-charts';
-import { useAuth } from '@/context/auth';
-import { supabase } from '@/lib/supabase';
-import { ACTIVITIES, MOOD_CONFIG, MoodEntry } from '@/types';
-import { useColors, ColorScheme } from '@/hooks/useColors';
-
+  View,
+} from "react-native";
+import { BarChart, LineChart } from "react-native-gifted-charts";
 
 function average(nums: number[]) {
   if (nums.length === 0) return 0;
@@ -25,7 +24,7 @@ function getLast14Days() {
   for (let i = 13; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
-    days.push(d.toISOString().split('T')[0]);
+    days.push(d.toISOString().split("T")[0]);
   }
   return days;
 }
@@ -47,22 +46,22 @@ export default function TrendsScreen() {
         const since = new Date();
         since.setDate(since.getDate() - 30);
         const { data } = await supabase
-          .from('mood_entries')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .gte('created_at', since.toISOString())
-          .order('created_at', { ascending: true });
+          .from("mood_entries")
+          .select("*")
+          .eq("user_id", session.user.id)
+          .gte("created_at", since.toISOString())
+          .order("created_at", { ascending: true });
         if (data) setEntries(data as MoodEntry[]);
         setLoading(false);
       };
       fetchEntries();
-    }, [session])
+    }, [session]),
   );
 
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color={colors.primary} />
+        <ActivityIndicator size='large' color={colors.primary} />
       </View>
     );
   }
@@ -72,7 +71,9 @@ export default function TrendsScreen() {
       <View style={styles.centered}>
         <Text style={styles.emptyEmoji}>📈</Text>
         <Text style={styles.emptyTitle}>Not enough data yet</Text>
-        <Text style={styles.emptySubtitle}>Log at least 2 entries to see your trends.</Text>
+        <Text style={styles.emptySubtitle}>
+          Log at least 2 entries to see your trends.
+        </Text>
       </View>
     );
   }
@@ -90,9 +91,12 @@ export default function TrendsScreen() {
   const energyByDay = days.map((day) => {
     const dayEntries = entries.filter((e) => e.created_at.startsWith(day));
     return {
-      value: dayEntries.length > 0 ? parseFloat(average(dayEntries.map((e) => e.energy)).toFixed(1)) : 0,
+      value:
+        dayEntries.length > 0
+          ? parseFloat(average(dayEntries.map((e) => e.energy)).toFixed(1))
+          : 0,
       label: day.slice(5),
-      dataPointColor: '#06B6D4',
+      dataPointColor: "#06B6D4",
     };
   });
 
@@ -100,11 +104,16 @@ export default function TrendsScreen() {
     const matched = entries.filter((e) => e.activities.includes(act.id));
     return {
       label: act.emoji,
-      value: matched.length > 0 ? parseFloat(average(matched.map((e) => e.mood)).toFixed(1)) : 0,
+      value:
+        matched.length > 0
+          ? parseFloat(average(matched.map((e) => e.mood)).toFixed(1))
+          : 0,
       frontColor: colors.primary,
       topLabelComponent: () =>
         matched.length > 0 ? (
-          <Text style={styles.barLabel}>{average(matched.map((e) => e.mood)).toFixed(1)}</Text>
+          <Text style={styles.barLabel}>
+            {average(matched.map((e) => e.mood)).toFixed(1)}
+          </Text>
         ) : null,
     };
   }).filter((a) => a.value > 0);
@@ -113,11 +122,37 @@ export default function TrendsScreen() {
   const avgEnergy = average(entries.map((e) => e.energy));
   const topMoodConfig = MOOD_CONFIG[Math.round(avgMood)];
 
+  const moodByTime = Array.from({ length: 24 }, (_, hour) => {
+    const hourEntries = entries.filter(
+      (e) => new Date(e.created_at).getHours() === hour,
+    );
+    const avg =
+      hourEntries.length > 0 ? average(hourEntries.map((e) => e.mood)) : 0;
+    const label =
+      hour === 0
+        ? "12am"
+        : hour < 12
+          ? `${hour}am`
+          : hour === 12
+            ? "12pm"
+            : `${hour - 12}pm`;
+    return { hour, avg, count: hourEntries.length, label };
+  })
+    .filter((d) => d.count > 0)
+    .map((d) => ({
+      value: parseFloat(d.avg.toFixed(1)),
+      label: d.label,
+      frontColor: colors.primary,
+      topLabelComponent: () => (
+        <Text style={styles.barLabel}>{d.avg.toFixed(1)}</Text>
+      ),
+    }));
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.statsRow}>
         <View style={styles.statCard}>
-          <Text style={styles.statEmoji}>{topMoodConfig?.emoji ?? '😐'}</Text>
+          <Text style={styles.statEmoji}>{topMoodConfig?.emoji ?? "😐"}</Text>
           <Text style={styles.statValue}>{avgMood.toFixed(1)}</Text>
           <Text style={styles.statLabel}>Avg Mood</Text>
         </View>
@@ -145,7 +180,7 @@ export default function TrendsScreen() {
           dataPointsRadius={4}
           maxValue={5}
           noOfSections={5}
-          yAxisLabelTexts={['', '1', '2', '3', '4', '5']}
+          yAxisLabelTexts={["", "1", "2", "3", "4", "5"]}
           yAxisTextStyle={styles.axisText}
           xAxisLabelTextStyle={styles.axisText}
           rulesColor={colors.border}
@@ -166,24 +201,42 @@ export default function TrendsScreen() {
           data={energyByDay}
           width={CHART_WIDTH}
           height={160}
-          color="#06B6D4"
+          color='#06B6D4'
           thickness={2}
-          dataPointsColor="#06B6D4"
+          dataPointsColor='#06B6D4'
           dataPointsRadius={4}
           maxValue={10}
           noOfSections={5}
-          yAxisLabelTexts={['', '2', '4', '6', '8', '10']}
+          yAxisLabelTexts={["", "2", "4", "6", "8", "10"]}
           yAxisTextStyle={styles.axisText}
           xAxisLabelTextStyle={styles.axisText}
           rulesColor={colors.border}
           areaChart
-          startFillColor="#CFFAFE"
+          startFillColor='#CFFAFE'
           endFillColor={colors.card}
           startOpacity={0.6}
           endOpacity={0.1}
           isAnimated
           showVerticalLines
           verticalLinesColor={colors.border}
+        />
+      </View>
+
+      <View style={styles.chartCard}>
+        <Text style={styles.chartTitle}>Mood by Time of Day</Text>
+        <BarChart
+          data={moodByTime}
+          width={CHART_WIDTH}
+          height={160}
+          barWidth={40}
+          spacing={16}
+          maxValue={5}
+          noOfSections={5}
+          yAxisTextStyle={styles.axisText}
+          xAxisLabelTextStyle={styles.axisText}
+          rulesColor={colors.border}
+          isAnimated
+          roundedTop
         />
       </View>
 
@@ -214,23 +267,58 @@ function makeStyles(c: ColorScheme) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: c.background },
     content: { padding: 16, paddingBottom: 40, gap: 12 },
-    centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: c.background, padding: 40 },
+    centered: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: c.background,
+      padding: 40,
+    },
     emptyEmoji: { fontSize: 56, marginBottom: 16 },
-    emptyTitle: { fontSize: 20, fontWeight: '600', color: c.text, marginBottom: 8 },
-    emptySubtitle: { fontSize: 15, color: c.subtext, textAlign: 'center', lineHeight: 22 },
-    statsRow: { flexDirection: 'row', gap: 10 },
+    emptyTitle: {
+      fontSize: 20,
+      fontWeight: "600",
+      color: c.text,
+      marginBottom: 8,
+    },
+    emptySubtitle: {
+      fontSize: 15,
+      color: c.subtext,
+      textAlign: "center",
+      lineHeight: 22,
+    },
+    statsRow: { flexDirection: "row", gap: 10 },
     statCard: {
-      flex: 1, backgroundColor: c.card, borderRadius: 16, padding: 16,
-      alignItems: 'center', borderWidth: 1, borderColor: c.border,
+      flex: 1,
+      backgroundColor: c.card,
+      borderRadius: 16,
+      padding: 16,
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: c.border,
     },
     statEmoji: { fontSize: 28, marginBottom: 4 },
-    statValue: { fontSize: 22, fontWeight: '700', color: c.text },
-    statLabel: { fontSize: 11, color: c.subtext, marginTop: 2, fontWeight: '500' },
-    chartCard: {
-      backgroundColor: c.card, borderRadius: 16, padding: 16,
-      borderWidth: 1, borderColor: c.border, overflow: 'hidden',
+    statValue: { fontSize: 22, fontWeight: "700", color: c.text },
+    statLabel: {
+      fontSize: 11,
+      color: c.subtext,
+      marginTop: 2,
+      fontWeight: "500",
     },
-    chartTitle: { fontSize: 14, fontWeight: '600', color: c.text, marginBottom: 16 },
+    chartCard: {
+      backgroundColor: c.card,
+      borderRadius: 16,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: c.border,
+      overflow: "hidden",
+    },
+    chartTitle: {
+      fontSize: 14,
+      fontWeight: "600",
+      color: c.text,
+      marginBottom: 16,
+    },
     axisText: { fontSize: 10, color: c.subtext },
     barLabel: { fontSize: 9, color: c.subtext, marginBottom: 2 },
   });

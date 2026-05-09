@@ -38,6 +38,8 @@ export const ACTIVITIES = [
   { id: "creative", label: "Creative", emoji: "🎨" },
   { id: "driving", label: "Driving", emoji: "🚗" },
   { id: "pets", label: "With Pets", emoji: "🐾" },
+  { id: "period", label: "Period", emoji: "🩸" },
+  { id: "drugs", label: "Drugs/Alcohol", emoji: "🍷" },
 ];
 
 export const lightColors = {

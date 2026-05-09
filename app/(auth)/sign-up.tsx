@@ -9,19 +9,23 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  View,
 } from 'react-native';
 import { Link } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { useColors, ColorScheme } from '@/hooks/useColors';
+import { useAuth } from '@/context/auth';
 
 export default function SignUp() {
   const colors = useColors();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { signInWithGoogle } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const handleSignUp = async () => {
     if (!email.trim() || !password || !confirm) {
@@ -47,6 +51,12 @@ export default function SignUp() {
       );
     }
     setLoading(false);
+  };
+
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true);
+    await signInWithGoogle();
+    setGoogleLoading(false);
   };
 
   return (
@@ -86,11 +96,28 @@ export default function SignUp() {
           secureTextEntry
         />
 
-        <TouchableOpacity style={styles.button} onPress={handleSignUp} disabled={loading}>
+        <TouchableOpacity style={styles.button} onPress={handleSignUp} disabled={loading || googleLoading}>
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
             <Text style={styles.buttonText}>Create Account</Text>
+          )}
+        </TouchableOpacity>
+
+        <View style={styles.dividerRow}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>or</Text>
+          <View style={styles.dividerLine} />
+        </View>
+
+        <TouchableOpacity style={styles.googleButton} onPress={handleGoogleSignIn} disabled={loading || googleLoading}>
+          {googleLoading ? (
+            <ActivityIndicator color={colors.text} />
+          ) : (
+            <>
+              <Text style={styles.googleIcon}>G</Text>
+              <Text style={styles.googleButtonText}>Continue with Google</Text>
+            </>
           )}
         </TouchableOpacity>
 
@@ -135,6 +162,31 @@ function makeStyles(c: ColorScheme) {
       marginTop: 8,
     },
     buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+    dividerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      marginVertical: 4,
+    },
+    dividerLine: { flex: 1, height: 1, backgroundColor: c.border },
+    dividerText: { fontSize: 13, color: c.subtext },
+    googleButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 10,
+      backgroundColor: c.card,
+      borderRadius: 14,
+      paddingVertical: 15,
+      borderWidth: 1,
+      borderColor: c.border,
+    },
+    googleIcon: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: '#4285F4',
+    },
+    googleButtonText: { fontSize: 16, fontWeight: '500', color: c.text },
     linkButton: { alignItems: 'center', paddingVertical: 12 },
     linkText: { color: c.primary, fontSize: 14, fontWeight: '500' },
   });
