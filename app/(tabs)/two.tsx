@@ -20,7 +20,7 @@ export default function HistoryScreen() {
   const colors = useColors();
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
-  const { activities } = useActivities();
+  const { activities, refresh: refreshActivities } = useActivities();
   const [entries, setEntries] = useState<MoodEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -42,6 +42,7 @@ export default function HistoryScreen() {
     useCallback(() => {
       setLoading(true);
       fetchEntries();
+      refreshActivities();
     }, [session])
   );
 
