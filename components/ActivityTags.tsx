@@ -1,4 +1,5 @@
 import { ColorScheme, useColors } from "@/hooks/useColors";
+import { Activity } from "@/hooks/useActivities";
 import { ACTIVITIES } from "@/types";
 import { useMemo } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -6,11 +7,15 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 type Props = {
   selected: string[];
   onChange: (activities: string[]) => void;
+  activities?: Activity[];
 };
 
-export default function ActivityTags({ selected, onChange }: Props) {
+export default function ActivityTags({ selected, onChange, activities }: Props) {
   const colors = useColors();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+
+  const list = activities ?? ACTIVITIES.map((a) => ({ ...a, custom: false }));
+  const sorted = [...list].sort((a, b) => a.label.localeCompare(b.label));
 
   const toggle = (id: string) => {
     if (selected.includes(id)) {
@@ -22,7 +27,7 @@ export default function ActivityTags({ selected, onChange }: Props) {
 
   return (
     <View style={styles.grid}>
-      {ACTIVITIES.sort((a, b) => a.label.localeCompare(b.label)).map((act) => {
+      {sorted.map((act) => {
         const active = selected.includes(act.id);
         return (
           <TouchableOpacity

@@ -1,7 +1,8 @@
 import { useAuth } from "@/context/auth";
 import { ColorScheme, useColors } from "@/hooks/useColors";
+import { useActivities } from "@/hooks/useActivities";
 import { supabase } from "@/lib/supabase";
-import { ACTIVITIES, MOOD_CONFIG, MoodEntry } from "@/types";
+import { MOOD_CONFIG, MoodEntry } from "@/types";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import {
@@ -36,6 +37,7 @@ export default function TrendsScreen() {
   const { width } = useWindowDimensions();
   const CHART_WIDTH = width - 64;
 
+  const { activities } = useActivities();
   const [entries, setEntries] = useState<MoodEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -100,7 +102,7 @@ export default function TrendsScreen() {
     };
   });
 
-  const activityMoods = ACTIVITIES.map((act) => {
+  const activityMoods = activities.map((act) => {
     const matched = entries.filter((e) => e.activities.includes(act.id));
     return {
       label: act.emoji,

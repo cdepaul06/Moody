@@ -14,6 +14,7 @@ import {
 import { useAuth } from '@/context/auth';
 import { supabase } from '@/lib/supabase';
 import { useColors, ColorScheme } from '@/hooks/useColors';
+import { useActivities } from '@/hooks/useActivities';
 import MoodPicker from '@/components/MoodPicker';
 import EnergySlider from '@/components/EnergySlider';
 import ActivityTags from '@/components/ActivityTags';
@@ -22,6 +23,7 @@ export default function LogMoodScreen() {
   const { session } = useAuth();
   const colors = useColors();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { activities: allActivities } = useActivities();
 
   const [mood, setMood] = useState<number>(3);
   const [energy, setEnergy] = useState<number>(5);
@@ -75,7 +77,7 @@ export default function LogMoodScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>Activities</Text>
-          <ActivityTags selected={activities} onChange={setActivities} />
+          <ActivityTags selected={activities} onChange={setActivities} activities={allActivities} />
         </View>
 
         <View style={styles.section}>

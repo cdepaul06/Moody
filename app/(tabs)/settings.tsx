@@ -15,6 +15,7 @@ import { useAuth } from '@/context/auth';
 import { supabase } from '@/lib/supabase';
 import { useColors, ColorScheme } from '@/hooks/useColors';
 import { useTheme, ThemePreference } from '@/context/theme';
+import { useActivities } from '@/hooks/useActivities';
 
 function SectionHeader({ title, styles }: { title: string; styles: ReturnType<typeof makeStyles> }) {
   return <Text style={styles.sectionHeader}>{title}</Text>;
@@ -40,6 +41,7 @@ export default function SettingsScreen() {
   const colors = useColors();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const { preference, setPreference } = useTheme();
+  const { customActivities, addActivity, deleteActivity } = useActivities();
 
   const themeOptions: { label: string; value: ThemePreference }[] = [
     { label: 'System', value: 'system' },
@@ -59,6 +61,11 @@ export default function SettingsScreen() {
   const [displayName, setDisplayName] = useState(resolvedName);
   const [nameInput, setNameInput] = useState(resolvedName);
   const [savingName, setSavingName] = useState(false);
+
+  const [addingActivity, setAddingActivity] = useState(false);
+  const [newEmoji, setNewEmoji] = useState('');
+  const [newLabel, setNewLabel] = useState('');
+  const [savingActivity, setSavingActivity] = useState(false);
 
   useEffect(() => {
     setDisplayName(resolvedName);
@@ -84,6 +91,28 @@ export default function SettingsScreen() {
     Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Sign Out', style: 'destructive', onPress: signOut },
+    ]);
+  };
+
+  const handleAddActivity = async () => {
+    if (!newEmoji.trim()) { Alert.alert('Missing emoji', 'Please enter an emoji.'); return; }
+    if (!newLabel.trim()) { Alert.alert('Missing name', 'Please enter an activity name.'); return; }
+    setSavingActivity(true);
+    const error = await addActivity(newLabel, newEmoji);
+    if (error) {
+      Alert.alert('Could not add activity', error);
+    } else {
+      setNewEmoji('');
+      setNewLabel('');
+      setAddingActivity(false);
+    }
+    setSavingActivity(false);
+  };
+
+  const handleDeleteActivity = (id: string, label: string) => {
+    Alert.alert('Delete Activity', `Remove "${label}"?`, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: () => deleteActivity(id) },
     ]);
   };
 
@@ -148,6 +177,58 @@ export default function SettingsScreen() {
         </View>
       </View>
 
+      <SectionHeader title="CUSTOM ACTIVITIES" styles={styles} />
+      <View style={[styles.card, { paddingVertical: 4 }]}>
+        {customActivities.map((act, index) => (
+          <View key={act.id}>
+            {index > 0 && <View style={styles.divider} />}
+            <View style={styles.activityRow}>
+              <Text style={styles.activityEmoji}>{act.emoji}</Text>
+              <Text style={styles.activityLabel}>{act.label}</Text>
+              <TouchableOpacity onPress={() => handleDeleteActivity(act.id, act.label)} hitSlop={8}>
+                <FontAwesome name="trash" size={15} color={colors.danger} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        ))}
+
+        {customActivities.length > 0 && <View style={styles.divider} />}
+
+        {addingActivity ? (
+          <View style={styles.addActivityForm}>
+            <TextInput
+              style={styles.emojiInput}
+              value={newEmoji}
+              onChangeText={setNewEmoji}
+              placeholder="😊"
+              placeholderTextColor={colors.subtext}
+              maxLength={2}
+            />
+            <TextInput
+              style={styles.labelInput}
+              value={newLabel}
+              onChangeText={setNewLabel}
+              placeholder="Activity name"
+              placeholderTextColor={colors.subtext}
+              autoFocus
+              returnKeyType="done"
+              onSubmitEditing={handleAddActivity}
+            />
+            <TouchableOpacity style={styles.saveNameButton} onPress={handleAddActivity} disabled={savingActivity}>
+              {savingActivity ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveNameText}>Add</Text>}
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.cancelNameButton} onPress={() => { setAddingActivity(false); setNewEmoji(''); setNewLabel(''); }}>
+              <Text style={styles.cancelNameText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity style={styles.addActivityButton} onPress={() => setAddingActivity(true)} activeOpacity={0.6}>
+            <FontAwesome name="plus" size={13} color={colors.primary} />
+            <Text style={styles.addActivityText}>Add Activity</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
       <SectionHeader title="DANGER ZONE" styles={styles} />
       <View style={styles.card}>
         <SettingsRow label="Delete Account" onPress={() => router.push('/delete-account')} danger styles={styles} colors={colors} />
@@ -202,26 +283,38 @@ function makeStyles(c: ColorScheme) {
     rowLabel: { fontSize: 15, color: c.text },
     dangerLabel: { color: c.danger },
     divider: { height: 1, backgroundColor: c.border, marginLeft: 16 },
-    themeRow: {
-      flexDirection: 'row',
-      padding: 8,
-      gap: 6,
-    },
+    themeRow: { flexDirection: 'row', padding: 8, gap: 6 },
     themeButton: {
-      flex: 1,
-      alignItems: 'center',
-      paddingVertical: 8,
-      borderRadius: 10,
-      backgroundColor: c.background,
-      borderWidth: 1,
-      borderColor: c.border,
+      flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: 10,
+      backgroundColor: c.background, borderWidth: 1, borderColor: c.border,
     },
-    themeButtonActive: {
-      backgroundColor: c.primaryLight,
-      borderColor: c.primary,
-    },
+    themeButtonActive: { backgroundColor: c.primaryLight, borderColor: c.primary },
     themeButtonText: { fontSize: 14, fontWeight: '500', color: c.subtext },
     themeButtonTextActive: { color: c.primary, fontWeight: '600' },
+    activityRow: {
+      flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 13, gap: 10,
+    },
+    activityEmoji: { fontSize: 18 },
+    activityLabel: { flex: 1, fontSize: 15, color: c.text },
+    addActivityButton: {
+      flexDirection: 'row', alignItems: 'center', gap: 8,
+      paddingHorizontal: 16, paddingVertical: 14,
+    },
+    addActivityText: { fontSize: 15, color: c.primary, fontWeight: '500' },
+    addActivityForm: {
+      flexDirection: 'row', alignItems: 'center', gap: 8,
+      paddingHorizontal: 12, paddingVertical: 10,
+    },
+    emojiInput: {
+      width: 44, backgroundColor: c.background, borderRadius: 10,
+      paddingHorizontal: 8, paddingVertical: 8, fontSize: 18,
+      color: c.text, borderWidth: 1, borderColor: c.border, textAlign: 'center',
+    },
+    labelInput: {
+      flex: 1, backgroundColor: c.background, borderRadius: 10,
+      paddingHorizontal: 12, paddingVertical: 8, fontSize: 15,
+      color: c.text, borderWidth: 1, borderColor: c.border,
+    },
     signOutButton: {
       alignItems: 'center', paddingVertical: 14, borderRadius: 14,
       borderWidth: 1, borderColor: c.border, backgroundColor: c.card,
