@@ -25,6 +25,7 @@ export default function SignIn() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [cooldown, setCooldown] = useState(false);
 
   const handleSignIn = async () => {
     if (!email.trim() || !password) {
@@ -36,7 +37,11 @@ export default function SignIn() {
       email: email.trim(),
       password,
     });
-    if (error) Alert.alert('Sign in failed', error.message);
+    if (error) {
+      Alert.alert('Sign in failed', 'Invalid email or password.');
+      setCooldown(true);
+      setTimeout(() => setCooldown(false), 5000);
+    }
     setLoading(false);
   };
 
@@ -75,7 +80,7 @@ export default function SignIn() {
           secureTextEntry
         />
 
-        <TouchableOpacity style={styles.button} onPress={handleSignIn} disabled={loading || googleLoading}>
+        <TouchableOpacity style={styles.button} onPress={handleSignIn} disabled={loading || googleLoading || cooldown}>
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (

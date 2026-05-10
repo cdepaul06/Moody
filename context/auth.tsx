@@ -46,12 +46,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(session);
     });
 
+    const isValidJwt = (token: string) => (token.match(/\./g) ?? []).length === 2;
+
     const handleDeepLink = async (url: string) => {
       const parsed = new URL(url);
       const params = new URLSearchParams(parsed.hash.replace('#', ''));
       const accessToken = params.get('access_token');
       const refreshToken = params.get('refresh_token');
-      if (accessToken && refreshToken) {
+      if (accessToken && refreshToken && isValidJwt(accessToken) && isValidJwt(refreshToken)) {
         await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
       }
     };

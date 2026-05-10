@@ -36,14 +36,14 @@ export default function SignUp() {
       Alert.alert('Passwords do not match', 'Please make sure your passwords match.');
       return;
     }
-    if (password.length < 6) {
-      Alert.alert('Weak password', 'Password must be at least 6 characters.');
+    if (password.length < 8) {
+      Alert.alert('Weak password', 'Password must be at least 8 characters.');
       return;
     }
     setLoading(true);
     const { error } = await supabase.auth.signUp({ email: email.trim(), password });
     if (error) {
-      Alert.alert('Sign up failed', error.message);
+      Alert.alert('Sign up failed', 'Could not create account. Please try again.');
     } else {
       Alert.alert(
         'Check your email',

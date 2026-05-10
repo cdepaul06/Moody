@@ -62,6 +62,10 @@ export default function LogMoodScreen() {
 
   const handleLog = async () => {
     if (!session?.user) return;
+    if (notes.trim().length > 2000) {
+      Alert.alert('Notes too long', 'Please keep your notes under 2000 characters.');
+      return;
+    }
     setLoading(true);
     const { error } = await supabase.from('mood_entries').insert({
       user_id: session.user.id,
@@ -86,6 +90,7 @@ export default function LogMoodScreen() {
   const handleAddActivity = async () => {
     if (!newEmoji.trim()) { Alert.alert('Missing emoji', 'Please enter an emoji.'); return; }
     if (!newLabel.trim()) { Alert.alert('Missing name', 'Please enter an activity name.'); return; }
+    if (newLabel.trim().length > 50) { Alert.alert('Name too long', 'Activity name must be 50 characters or less.'); return; }
     setSavingActivity(true);
     const error = await addActivity(newLabel, newEmoji);
     if (error) {
@@ -168,6 +173,7 @@ export default function LogMoodScreen() {
                 placeholderTextColor={colors.subtext}
                 autoFocus
                 returnKeyType="done"
+                maxLength={50}
                 onSubmitEditing={handleAddActivity}
               />
               <TouchableOpacity style={styles.saveButton} onPress={handleAddActivity} disabled={savingActivity}>
@@ -220,6 +226,7 @@ export default function LogMoodScreen() {
             multiline
             numberOfLines={4}
             textAlignVertical="top"
+            maxLength={2000}
             onFocus={() => {
               scrollRef.current?.scrollTo({ y: Math.max(0, notesYRef.current - 50), animated: false });
               setTimeout(() => scrollRef.current?.scrollTo({ y: notesYRef.current, animated: true }), 300);
