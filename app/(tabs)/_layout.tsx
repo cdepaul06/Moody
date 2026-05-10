@@ -1,9 +1,12 @@
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Tabs } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useColors } from '@/hooks/useColors';
+import { useColors } from "@/hooks/useColors";
+import FontAwesome from "@expo/vector-icons/FontAwesome";
+import { Tabs } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-function TabIcon(props: { name: React.ComponentProps<typeof FontAwesome>['name']; color: string }) {
+function TabIcon(props: {
+  name: React.ComponentProps<typeof FontAwesome>["name"];
+  color: string;
+}) {
   return <FontAwesome size={24} {...props} />;
 }
 
@@ -22,42 +25,46 @@ export default function TabLayout() {
           paddingBottom: insets.bottom || 4,
           height: 60 + insets.bottom,
         },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '500' },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: "500" },
         headerStyle: { backgroundColor: colors.background },
-        headerTitleStyle: { color: colors.text, fontWeight: '600', fontSize: 18 },
+        headerTitleStyle: {
+          color: colors.text,
+          fontWeight: "600",
+          fontSize: 18,
+        },
         headerShadowVisible: false,
       }}
     >
       <Tabs.Screen
-        name="index"
+        name='index'
         options={{
-          title: 'Log Mood',
-          tabBarIcon: ({ color }) => <TabIcon name="heart" color={color} />,
-          headerTitle: 'How are you feeling?',
+          title: "Log Mood",
+          tabBarIcon: ({ color }) => <TabIcon name='heart' color={color} />,
+          headerTitle: "How are you feeling?",
         }}
       />
       <Tabs.Screen
-        name="two"
+        name='history'
         options={{
-          title: 'History',
-          tabBarIcon: ({ color }) => <TabIcon name="list" color={color} />,
-          headerTitle: 'Your Entries',
+          title: "History",
+          tabBarIcon: ({ color }) => <TabIcon name='list' color={color} />,
+          headerTitle: "Your Entries",
         }}
       />
       <Tabs.Screen
-        name="trends"
+        name='trends'
         options={{
-          title: 'Trends',
-          tabBarIcon: ({ color }) => <TabIcon name="bar-chart" color={color} />,
-          headerTitle: 'Your Trends',
+          title: "Trends",
+          tabBarIcon: ({ color }) => <TabIcon name='bar-chart' color={color} />,
+          headerTitle: "Your Trends",
         }}
       />
       <Tabs.Screen
-        name="settings"
+        name='settings'
         options={{
-          title: 'Settings',
-          tabBarIcon: ({ color }) => <TabIcon name="cog" color={color} />,
-          headerTitle: 'Settings',
+          title: "Settings",
+          tabBarIcon: ({ color }) => <TabIcon name='cog' color={color} />,
+          headerTitle: "Settings",
         }}
       />
     </Tabs>

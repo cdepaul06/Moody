@@ -23,25 +23,40 @@ import MoodPicker from '@/components/MoodPicker';
 import EnergySlider from '@/components/EnergySlider';
 import ActivityTags from '@/components/ActivityTags';
 
+function getLast7Days() {
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  });
+}
+
+function formatDayChip(date: Date, index: number) {
+  if (index === 0) return 'Today';
+  if (index === 1) return 'Yesterday';
+  return date.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+function formatEntryDate(date: Date) {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+  const dayStart = new Date(date); dayStart.setHours(0, 0, 0, 0);
+  const timeStr = date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  if (dayStart.getTime() === today.getTime()) return `Today at ${timeStr}`;
+  if (dayStart.getTime() === yesterday.getTime()) return `Yesterday at ${timeStr}`;
+  return date.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }) + ` at ${timeStr}`;
+}
+
+function toPickerHour(h: number) { return h === 0 ? 12 : h > 12 ? h - 12 : h; }
+function toHour24(h: number, isPM: boolean) { return isPM ? (h === 12 ? 12 : h + 12) : (h === 12 ? 0 : h); }
+
 export default function LogMoodScreen() {
   const { session } = useAuth();
   const colors = useColors();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const { activities: allActivities, refresh, addActivity, deleteActivity } = useActivities();
-  useFocusEffect(useCallback(() => {
-    refresh();
-    return () => {
-      setMood(3);
-      setEnergy(5);
-      setActivities([]);
-      setNotes('');
-      setAddingActivity(false);
-      setNewEmoji('');
-      setNewLabel('');
-      setDeleteModalVisible(false);
-      setDeleteSelections(new Set());
-    };
-  }, [refresh]));
+
   const scrollRef = useRef<ScrollView>(null);
   const notesYRef = useRef(0);
 
@@ -52,6 +67,13 @@ export default function LogMoodScreen() {
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
 
+  const [entryDate, setEntryDate] = useState(() => new Date());
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [pickerDay, setPickerDay] = useState(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; });
+  const [pickerHour, setPickerHour] = useState(() => toPickerHour(new Date().getHours()));
+  const [pickerMinute, setPickerMinute] = useState(() => Math.round(new Date().getMinutes() / 5) * 5 % 60);
+  const [pickerIsPM, setPickerIsPM] = useState(() => new Date().getHours() >= 12);
+
   const [addingActivity, setAddingActivity] = useState(false);
   const [newEmoji, setNewEmoji] = useState('');
   const [newLabel, setNewLabel] = useState('');
@@ -59,6 +81,45 @@ export default function LogMoodScreen() {
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [deleteSelections, setDeleteSelections] = useState<Set<string>>(new Set());
+
+  useFocusEffect(useCallback(() => {
+    refresh();
+    return () => {
+      setMood(3);
+      setEnergy(5);
+      setActivities([]);
+      setNotes('');
+      setEntryDate(new Date());
+      setAddingActivity(false);
+      setNewEmoji('');
+      setNewLabel('');
+      setDeleteModalVisible(false);
+      setDeleteSelections(new Set());
+    };
+  }, [refresh]));
+
+  const openDatePicker = () => {
+    const h = entryDate.getHours();
+    const day = new Date(entryDate); day.setHours(0, 0, 0, 0);
+    setPickerDay(day);
+    setPickerHour(toPickerHour(h));
+    setPickerMinute(Math.round(entryDate.getMinutes() / 5) * 5 % 60);
+    setPickerIsPM(h >= 12);
+    setDatePickerOpen(true);
+  };
+
+  const confirmDatePicker = () => {
+    const result = new Date(pickerDay);
+    result.setHours(toHour24(pickerHour, pickerIsPM), pickerMinute, 0, 0);
+    setEntryDate(result);
+    setDatePickerOpen(false);
+  };
+
+  const adjustHour = (delta: number) =>
+    setPickerHour((h) => { const n = h + delta; return n > 12 ? 1 : n < 1 ? 12 : n; });
+
+  const adjustMinute = (delta: number) =>
+    setPickerMinute((m) => { const n = m + delta * 5; return n >= 60 ? 0 : n < 0 ? 55 : n; });
 
   const handleLog = async () => {
     if (!session?.user) return;
@@ -73,6 +134,7 @@ export default function LogMoodScreen() {
       energy,
       activities,
       notes: notes.trim(),
+      created_at: entryDate.toISOString(),
     });
     if (error) {
       Alert.alert('Could not save entry', error.message);
@@ -82,6 +144,7 @@ export default function LogMoodScreen() {
       setEnergy(5);
       setActivities([]);
       setNotes('');
+      setEntryDate(new Date());
       setTimeout(() => setSaved(false), 2500);
     }
     setLoading(false);
@@ -102,6 +165,8 @@ export default function LogMoodScreen() {
     }
     setSavingActivity(false);
   };
+
+  const last7Days = getLast7Days();
 
   return (
     <KeyboardAvoidingView
@@ -206,9 +271,7 @@ export default function LogMoodScreen() {
                 icon: colors.subtext,
                 background: colors.background,
               },
-              emoji: {
-                selected: colors.primaryLight,
-              },
+              emoji: { selected: colors.primaryLight },
             }}
           />
 
@@ -234,6 +297,15 @@ export default function LogMoodScreen() {
           />
         </View>
 
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Date & Time</Text>
+          <TouchableOpacity style={styles.dateRow} onPress={openDatePicker}>
+            <FontAwesome name="calendar" size={14} color={colors.primary} />
+            <Text style={styles.dateText}>{formatEntryDate(entryDate)}</Text>
+            <FontAwesome name="pencil" size={12} color={colors.subtext} />
+          </TouchableOpacity>
+        </View>
+
         {saved && (
           <View style={styles.successBanner}>
             <Text style={styles.successText}>✓ Entry saved!</Text>
@@ -245,6 +317,81 @@ export default function LogMoodScreen() {
         </TouchableOpacity>
       </ScrollView>
 
+      {/* Date & Time picker modal */}
+      <Modal visible={datePickerOpen} transparent animationType="fade" onRequestClose={() => setDatePickerOpen(false)}>
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>When?</Text>
+
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.dayScroll} contentContainerStyle={styles.dayScrollContent}>
+              {last7Days.map((day, i) => {
+                const selected = pickerDay.getTime() === day.getTime();
+                return (
+                  <TouchableOpacity
+                    key={i}
+                    style={[styles.dayChip, selected && styles.dayChipSelected]}
+                    onPress={() => setPickerDay(day)}
+                  >
+                    <Text style={[styles.dayChipText, selected && styles.dayChipTextSelected]}>
+                      {formatDayChip(day, i)}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+
+            <View style={styles.timeRow}>
+              <View style={styles.timeStepper}>
+                <TouchableOpacity onPress={() => adjustHour(1)} style={styles.stepBtn} hitSlop={8}>
+                  <FontAwesome name="chevron-up" size={13} color={colors.primary} />
+                </TouchableOpacity>
+                <Text style={styles.timeValue}>{String(pickerHour).padStart(2, '0')}</Text>
+                <TouchableOpacity onPress={() => adjustHour(-1)} style={styles.stepBtn} hitSlop={8}>
+                  <FontAwesome name="chevron-down" size={13} color={colors.primary} />
+                </TouchableOpacity>
+              </View>
+
+              <Text style={styles.timeSep}>:</Text>
+
+              <View style={styles.timeStepper}>
+                <TouchableOpacity onPress={() => adjustMinute(1)} style={styles.stepBtn} hitSlop={8}>
+                  <FontAwesome name="chevron-up" size={13} color={colors.primary} />
+                </TouchableOpacity>
+                <Text style={styles.timeValue}>{String(pickerMinute).padStart(2, '0')}</Text>
+                <TouchableOpacity onPress={() => adjustMinute(-1)} style={styles.stepBtn} hitSlop={8}>
+                  <FontAwesome name="chevron-down" size={13} color={colors.primary} />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.ampmGroup}>
+                <TouchableOpacity
+                  style={[styles.ampmBtn, !pickerIsPM && styles.ampmBtnActive]}
+                  onPress={() => setPickerIsPM(false)}
+                >
+                  <Text style={[styles.ampmText, !pickerIsPM && styles.ampmTextActive]}>AM</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.ampmBtn, pickerIsPM && styles.ampmBtnActive]}
+                  onPress={() => setPickerIsPM(true)}
+                >
+                  <Text style={[styles.ampmText, pickerIsPM && styles.ampmTextActive]}>PM</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.modalCancel} onPress={() => setDatePickerOpen(false)}>
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalConfirm} onPress={confirmDatePicker}>
+                <Text style={styles.modalConfirmText}>Confirm</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Delete activity modal */}
       <Modal visible={deleteModalVisible} transparent animationType="fade" onRequestClose={() => setDeleteModalVisible(false)}>
         <View style={styles.modalBackdrop}>
           <View style={styles.modalCard}>
@@ -295,7 +442,6 @@ export default function LogMoodScreen() {
           </View>
         </View>
       </Modal>
-
     </KeyboardAvoidingView>
   );
 }
@@ -334,24 +480,15 @@ function makeStyles(c: ColorScheme) {
     },
     deleteButtonText: { fontSize: 12, color: c.danger, fontWeight: '600' },
     addButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 4,
-      paddingHorizontal: 10,
-      paddingVertical: 4,
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: c.primary,
+      flexDirection: 'row', alignItems: 'center', gap: 4,
+      paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12,
+      borderWidth: 1, borderColor: c.primary,
     },
     addButtonText: { fontSize: 12, color: c.primary, fontWeight: '600' },
     addForm: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-      marginBottom: 12,
-      paddingBottom: 12,
-      borderBottomWidth: 1,
-      borderBottomColor: c.border,
+      flexDirection: 'row', alignItems: 'center', gap: 8,
+      marginBottom: 12, paddingBottom: 12,
+      borderBottomWidth: 1, borderBottomColor: c.border,
     },
     emojiButton: {
       width: 44, height: 44, borderRadius: 10, borderWidth: 1.5,
@@ -370,21 +507,19 @@ function makeStyles(c: ColorScheme) {
     },
     saveButtonText: { color: '#fff', fontWeight: '600', fontSize: 14 },
     notes: { fontSize: 15, color: c.text, minHeight: 90, lineHeight: 22 },
+    dateRow: {
+      flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 10,
+    },
+    dateText: { flex: 1, fontSize: 15, color: c.text, fontWeight: '500' },
     button: {
-      backgroundColor: c.primary,
-      borderRadius: 14,
-      paddingVertical: 16,
-      alignItems: 'center',
-      marginTop: 4,
+      backgroundColor: c.primary, borderRadius: 14,
+      paddingVertical: 16, alignItems: 'center', marginTop: 4,
     },
     buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
     successBanner: {
-      backgroundColor: '#DCFCE7',
-      borderRadius: 12,
-      paddingVertical: 12,
-      alignItems: 'center',
-      borderWidth: 1,
-      borderColor: '#BBF7D0',
+      backgroundColor: '#DCFCE7', borderRadius: 12,
+      paddingVertical: 12, alignItems: 'center',
+      borderWidth: 1, borderColor: '#BBF7D0',
     },
     successText: { color: '#16A34A', fontSize: 15, fontWeight: '600' },
     modalBackdrop: {
@@ -395,8 +530,44 @@ function makeStyles(c: ColorScheme) {
       width: '100%', backgroundColor: c.card, borderRadius: 20,
       borderWidth: 1, borderColor: c.border, padding: 24, gap: 4,
     },
-    modalTitle: { fontSize: 18, fontWeight: '700', color: c.text, marginBottom: 2 },
+    modalTitle: { fontSize: 18, fontWeight: '700', color: c.text, marginBottom: 8 },
     modalSubtitle: { fontSize: 13, color: c.subtext, marginBottom: 12 },
+    dayScroll: { marginBottom: 20 },
+    dayScrollContent: { gap: 8, paddingVertical: 4 },
+    dayChip: {
+      paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
+      borderWidth: 1, borderColor: c.border, backgroundColor: c.background,
+    },
+    dayChipSelected: { backgroundColor: c.primaryLight, borderColor: c.primary },
+    dayChipText: { fontSize: 13, color: c.subtext, fontWeight: '500' },
+    dayChipTextSelected: { color: c.primary, fontWeight: '600' },
+    timeRow: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+      gap: 12, marginBottom: 20,
+    },
+    timeStepper: { alignItems: 'center', gap: 8 },
+    stepBtn: { padding: 4 },
+    timeValue: { fontSize: 32, fontWeight: '600', color: c.text, minWidth: 48, textAlign: 'center' },
+    timeSep: { fontSize: 28, fontWeight: '600', color: c.text, marginTop: -8 },
+    ampmGroup: { gap: 6, marginLeft: 8 },
+    ampmBtn: {
+      paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10,
+      borderWidth: 1, borderColor: c.border, backgroundColor: c.background,
+    },
+    ampmBtnActive: { backgroundColor: c.primaryLight, borderColor: c.primary },
+    ampmText: { fontSize: 13, fontWeight: '600', color: c.subtext },
+    ampmTextActive: { color: c.primary },
+    modalActions: { flexDirection: 'row', gap: 10, marginTop: 8 },
+    modalCancel: {
+      flex: 1, paddingVertical: 13, borderRadius: 12,
+      borderWidth: 1, borderColor: c.border, alignItems: 'center',
+    },
+    modalCancelText: { fontSize: 15, color: c.subtext, fontWeight: '500' },
+    modalConfirm: {
+      flex: 1, paddingVertical: 13, borderRadius: 12,
+      backgroundColor: c.primary, alignItems: 'center',
+    },
+    modalConfirmText: { fontSize: 15, color: '#fff', fontWeight: '600' },
     modalRow: {
       flexDirection: 'row', alignItems: 'center', gap: 12,
       paddingVertical: 12, borderTopWidth: 1, borderTopColor: c.border,
@@ -408,14 +579,6 @@ function makeStyles(c: ColorScheme) {
       borderColor: c.border, alignItems: 'center', justifyContent: 'center',
     },
     checkboxChecked: { backgroundColor: c.danger, borderColor: c.danger },
-    modalActions: {
-      flexDirection: 'row', gap: 10, marginTop: 16,
-    },
-    modalCancel: {
-      flex: 1, paddingVertical: 13, borderRadius: 12, borderWidth: 1,
-      borderColor: c.border, alignItems: 'center',
-    },
-    modalCancelText: { fontSize: 15, color: c.subtext, fontWeight: '500' },
     modalDelete: {
       flex: 1, paddingVertical: 13, borderRadius: 12,
       backgroundColor: c.danger, alignItems: 'center',

@@ -1,38 +1,40 @@
-import { useMemo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { ACTIVITIES, MOOD_CONFIG, MoodEntry } from '@/types';
-import { Activity } from '@/hooks/useActivities';
-import { useColors, ColorScheme } from '@/hooks/useColors';
+import { Activity } from "@/hooks/useActivities";
+import { ColorScheme, useColors } from "@/hooks/useColors";
+import { ACTIVITIES, MOOD_CONFIG, MoodEntry } from "@/types";
+import { useMemo } from "react";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 type Props = {
   entry: MoodEntry;
   activities?: Activity[];
+  onPress?: () => void;
 };
 
 function formatDate(iso: string): string {
   const d = new Date(iso);
   return d.toLocaleDateString(undefined, {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }
 
 function energyLabel(value: number): string {
-  if (value <= 2) return 'Exhausted';
-  if (value <= 4) return 'Low';
-  if (value <= 6) return 'Moderate';
-  if (value <= 8) return 'High';
-  return 'Energized';
+  if (value <= 2) return "Exhausted";
+  if (value <= 4) return "Low";
+  if (value <= 6) return "Moderate";
+  if (value <= 8) return "High";
+  return "Energized";
 }
 
-export default function MoodEntryCard({ entry, activities }: Props) {
+export default function MoodEntryCard({ entry, activities, onPress }: Props) {
   const colors = useColors();
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
-  const allActivities = activities ?? ACTIVITIES.map((a) => ({ ...a, custom: false }));
+  const allActivities =
+    activities ?? ACTIVITIES.map((a) => ({ ...a, custom: false }));
   const moodConfig = MOOD_CONFIG[entry.mood];
   const activityLabels = entry.activities
     .map((id) => allActivities.find((a) => a.id === id))
@@ -40,7 +42,11 @@ export default function MoodEntryCard({ entry, activities }: Props) {
     .map((a) => `${a!.emoji} ${a!.label}`);
 
   return (
-    <View style={[styles.card, { borderLeftColor: moodConfig.color }]}>
+    <TouchableOpacity
+      style={[styles.card, { borderLeftColor: moodConfig.color }]}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
       <View style={styles.header}>
         <View style={styles.moodRow}>
           <Text style={styles.emoji}>{moodConfig.emoji}</Text>
@@ -72,7 +78,7 @@ export default function MoodEntryCard({ entry, activities }: Props) {
           {entry.notes}
         </Text>
       ) : null}
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -88,22 +94,31 @@ function makeStyles(c: ColorScheme) {
       borderLeftWidth: 4,
       gap: 10,
     },
-    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-    moodRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    header: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+    },
+    moodRow: { flexDirection: "row", alignItems: "center", gap: 10 },
     emoji: { fontSize: 32 },
-    moodLabel: { fontSize: 15, fontWeight: '700' },
+    moodLabel: { fontSize: 15, fontWeight: "700" },
     date: { fontSize: 12, color: c.subtext, marginTop: 1 },
-    energyBadge: { alignItems: 'flex-end' },
-    energyText: { fontSize: 13, fontWeight: '600', color: c.text },
+    energyBadge: { alignItems: "flex-end" },
+    energyText: { fontSize: 13, fontWeight: "600", color: c.text },
     energySubtext: { fontSize: 11, color: c.subtext, marginTop: 1 },
-    tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+    tagsRow: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
     tag: {
       backgroundColor: c.primaryLight,
       borderRadius: 20,
       paddingHorizontal: 10,
       paddingVertical: 4,
     },
-    tagText: { fontSize: 12, color: c.primary, fontWeight: '500' },
-    notes: { fontSize: 14, color: c.subtext, lineHeight: 20, fontStyle: 'italic' },
+    tagText: { fontSize: 12, color: c.primary, fontWeight: "500" },
+    notes: {
+      fontSize: 14,
+      color: c.subtext,
+      lineHeight: 20,
+      fontStyle: "italic",
+    },
   });
 }
