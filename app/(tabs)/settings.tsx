@@ -10,6 +10,7 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
@@ -83,6 +84,14 @@ export default function SettingsScreen() {
     setSavingName(false);
   };
 
+  const handleFeedback = () => {
+    const subject = encodeURIComponent('Moody App Feedback');
+    const body = encodeURIComponent('Hi,\n\nHere is my suggestion:\n\n');
+    Linking.openURL(`mailto:chris@cd-developer.com?subject=${subject}&body=${body}`).catch(() =>
+      Alert.alert('Could not open email app', 'Please email chris@cd-developer.com directly.')
+    );
+  };
+
   const handleSignOut = () => {
     Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
       { text: 'Cancel', style: 'cancel' },
@@ -150,6 +159,11 @@ export default function SettingsScreen() {
               </TouchableOpacity>
             ))}
           </View>
+        </View>
+
+        <SectionHeader title="FEEDBACK" styles={styles} />
+        <View style={styles.card}>
+          <SettingsRow label="Send a Suggestion" onPress={handleFeedback} styles={styles} colors={colors} />
         </View>
 
         <SectionHeader title="DANGER ZONE" styles={styles} />
